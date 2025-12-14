@@ -10,32 +10,58 @@ export default function Index({ auth }) {
 
     async function loadProducts() {
         setLoading(true);
-        const res = await fetch("/api/products", { credentials: "include" });
-        const data = await res.json();
-        setProducts(data);
-        setLoading(false);
+        setMessage(null);
+
+        try {
+            const res = await fetch("/api/products", {
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                },
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`API error ${res.status}: ${text}`);
+            }
+
+            const data = await res.json();
+            setProducts(data);
+        } catch (e) {
+            setMessage(e.message || "Failed to load products.");
+        } finally {
+            setLoading(false);
+        }
     }
 
     async function addToCart(productId) {
         setAddingId(productId);
         setMessage(null);
 
+        const token = document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content");
+
         const res = await fetch("/api/cart/items", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": token,
+            },
             body: JSON.stringify({ product_id: productId, quantity: 1 }),
         });
 
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            setMessage(err.message || "Failed to add to cart.");
+            const text = await res.text();
+            setMessage(`Failed (${res.status}): ${text}`);
         } else {
-            setMessage("Added to cart ✅");
+            setMessage("Added to cart");
         }
 
         setAddingId(null);
-        await loadProducts();
     }
 
     useEffect(() => {

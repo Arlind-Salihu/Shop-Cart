@@ -70,7 +70,7 @@ export default function CartIndex({ auth }) {
             return;
         }
 
-        setMessage(`Checkout complete ✅ Order #${data.order_id}`);
+        setMessage(`Checkout complete Order #${data.order_id}`);
         await loadCart();
     }
 
