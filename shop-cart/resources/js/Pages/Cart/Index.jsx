@@ -16,67 +16,75 @@ export default function CartIndex({ auth }) {
         setLoading(false);
     }
 
-    const total = useMemo(() => {
-        return items.reduce(
-            (sum, it) => sum + it.quantity * it.product.price,
-            0
-        );
-    }, [items]);
+    const total = items.reduce(
+        (sum, item) => sum + (item.product?.price ?? 0) * item.quantity,
+        0
+    );
 
-    async function updateQty(productId, quantity) {
-        setBusyId(productId);
+    const updateQty = async (productId, quantity) => {
+        await fetch(`/api/cart/items/${productId}`, {
+            method: "PATCH",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": csrfToken(),
+                "X-Requested-With": "XMLHttpRequest",
+            },
+            body: JSON.stringify({ quantity }),
+        });
+
+        await loadCart();
+    };
+
+    const removeItem = async (productId) => {
+        await fetch(`/api/cart/items/${productId}`, {
+            method: "DELETE",
+            credentials: "same-origin",
+            headers: {
+                "X-CSRF-TOKEN": csrfToken(),
+                "X-Requested-With": "XMLHttpRequest",
+            },
+        });
+
+        await loadCart();
+    };
+
+    const checkout = async () => {
+        setLoading(true);
         setMessage(null);
 
-        const res = await fetch(`/api/cart/items/${productId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            credentials: "include",
-            body: JSON.stringify({ quantity }),
+        const res = await fetch("/api/checkout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRF-TOKEN": csrfToken(),
+                "X-Requested-With": "XMLHttpRequest",
+            },
         });
 
         if (!res.ok) {
             const err = await res.json().catch(() => ({}));
-            setMessage(err.message || "Failed to update cart.");
-        }
-
-        setBusyId(null);
-        await loadCart();
-    }
-
-    async function removeItem(productId) {
-        setBusyId(productId);
-        setMessage(null);
-
-        await fetch(`/api/cart/items/${productId}`, {
-            method: "DELETE",
-            credentials: "include",
-        });
-
-        setBusyId(null);
-        await loadCart();
-    }
-
-    async function checkout() {
-        setMessage(null);
-        const res = await fetch("/api/checkout", {
-            method: "POST",
-            credentials: "include",
-        });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-            setMessage(data.message || "Checkout failed.");
+            setMessage(err.message || "Checkout failed.");
+            setLoading(false);
             return;
         }
 
-        setMessage(`Checkout complete Order #${data.order_id}`);
+        setMessage("Checkout successful ✅");
         await loadCart();
-    }
+        setLoading(false);
+    };
+
 
     useEffect(() => {
         loadCart();
     }, []);
+
+    function csrfToken() {
+        return document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content");
+    }
 
     return (
         <AuthenticatedLayout
