@@ -15,16 +15,18 @@ class SendLowStockEmail implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function __construct(public int $productId) {}
+    public Product $product;
+
+    public function __construct(Product $product)
+    {
+        $this->product = $product;
+    }
 
     public function handle(): void
     {
-        $product = Product::find($this->productId);
+        $adminEmail = env('ADMIN_EMAIL', 'admin-cart@mailinator.com');
 
-        if (!$product) {
-            return;
-        }
-
-        Mail::to(config('shop.admin_email'))->send(new LowStockMail($product));
+        Mail::to($adminEmail)
+            ->send(new LowStockMail($this->product));
     }
 }

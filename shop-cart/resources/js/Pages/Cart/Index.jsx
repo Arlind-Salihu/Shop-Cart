@@ -70,7 +70,7 @@ export default function CartIndex({ auth }) {
             return;
         }
 
-        setMessage("Checkout successful ✅");
+        setMessage("Checkout successful");
         await loadCart();
         setLoading(false);
     };

@@ -8,6 +8,6 @@ Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+
 Schedule::command('report:daily-sales')
-    ->dailyAt('20:00')
-    ->timezone('Europe/Belgrade');
+    ->dailyAt('18:00');

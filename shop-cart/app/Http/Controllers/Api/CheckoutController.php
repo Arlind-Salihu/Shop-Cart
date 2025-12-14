@@ -14,81 +14,85 @@ use Illuminate\Support\Facades\DB;
 class CheckoutController extends Controller
 {
     public function store(Request $request)
-    {
-        $user = $request->user();
+{
+    $user = $request->user();
 
-        $cartItems = CartItem::query()
-            ->where('user_id', $user->id)
-            ->with('product')
-            ->get();
+    $cartItems = CartItem::query()
+        ->where('user_id', $user->id)
+        ->get();
 
-        if ($cartItems->isEmpty()) {
-            return response()->json(['message' => 'Cart is empty.'], 422);
-        }
+    if ($cartItems->isEmpty()) {
+        return response()->json(['message' => 'Cart is empty.'], 422);
+    }
 
-        $lowStockProductIds = [];
+    $threshold = config('shop.low_stock_threshold', 5);
+    $lowStockProductIds = [];
 
-        try {
-            $order = DB::transaction(function () use ($user, $cartItems, &$lowStockProductIds) {
-                $total = 0;
+    try {
+        $order = DB::transaction(function () use ($user, $cartItems, $threshold, &$lowStockProductIds) {
 
-                $products = Product::query()
-                    ->whereIn('id', $cartItems->pluck('product_id'))
-                    ->lockForUpdate()
-                    ->get()
-                    ->keyBy('id');
+            $products = Product::query()
+                ->whereIn('id', $cartItems->pluck('product_id'))
+                ->lockForUpdate()
+                ->get()
+                ->keyBy('id');
 
-                foreach ($cartItems as $item) {
-                    $product = $products[$item->product_id] ?? null;
-                    if (!$product) {
-                        throw new \RuntimeException('Product not found.');
-                    }
+            $total = 0;
+            foreach ($cartItems as $item) {
+                $product = $products->get($item->product_id);
 
-                    if ($item->quantity > $product->stock_quantity) {
-                        throw new \RuntimeException("Not enough stock for {$product->name}.");
-                    }
-
-                    $total += ($product->price * $item->quantity);
+                if (!$product) {
+                    throw new \RuntimeException('Product not found.');
                 }
 
-                $order = Order::create([
-                    'user_id' => $user->id,
-                    'total' => $total,
+                if ($item->quantity > $product->stock_quantity) {
+                    throw new \RuntimeException("Not enough stock for {$product->name}.");
+                }
+
+                $total += ($product->price * $item->quantity);
+            }
+
+            $order = Order::create([
+                'user_id' => $user->id,
+                'total'   => $total,
+            ]);
+
+            foreach ($cartItems as $item) {
+                $product = $products->get($item->product_id);
+
+                OrderItem::create([
+                    'order_id'   => $order->id,
+                    'product_id' => $product->id,
+                    'price'      => $product->price,
+                    'quantity'   => $item->quantity,
                 ]);
 
-                foreach ($cartItems as $item) {
-                    $product = $products[$item->product_id];
+                $product->stock_quantity -= $item->quantity;
+                $product->save();
 
-                    OrderItem::create([
-                        'order_id' => $order->id,
-                        'product_id' => $product->id,
-                        'price' => $product->price,
-                        'quantity' => $item->quantity,
-                    ]);
-
-                    $product->stock_quantity -= $item->quantity;
-                    $product->save();
-
-                    if ($product->stock_quantity <= config('shop.low_stock_threshold')) {
-                        $lowStockProductIds[] = $product->id;
-                    }
+                if ($product->stock_quantity <= $threshold) {
+                    $lowStockProductIds[] = $product->id;
                 }
+            }
 
-                CartItem::query()->where('user_id', $user->id)->delete();
+            CartItem::where('user_id', $user->id)->delete();
 
-                return $order;
-            });
-        } catch (\RuntimeException $e) {
-            return response()->json(['message' => $e->getMessage()], 422);
-        }
-
-        foreach (array_unique($lowStockProductIds) as $pid) {
-            SendLowStockEmail::dispatch($pid);
-        }
-
-        return response()->json([
-            'message' => 'Checkout complete.',
-            'order_id' => $order->id,
-        ]);
+            return $order;
+        });
+    } catch (\RuntimeException $e) {
+        return response()->json(['message' => $e->getMessage()], 422);
     }
+
+    foreach (array_unique($lowStockProductIds) as $id) {
+        $product = Product::find($id);
+        if ($product) {
+            dispatch(new \App\Jobs\SendLowStockEmail($product))->afterCommit();
+        }
+    }
+
+    return response()->json([
+        'message'  => 'Checkout complete.',
+        'order_id' => $order->id,
+    ]);
+}
 }
