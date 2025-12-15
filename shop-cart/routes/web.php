@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Api\ProductController;
 use App\Http\Controllers\Api\CartController;
 use App\Http\Controllers\Api\CheckoutController;
+use App\Http\Controllers\Api\AdminDashboardController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -23,17 +24,18 @@ Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-/**
- * Inertia pages
- */
+// Inertia pages
 Route::middleware(['auth'])->group(function () {
-    Route::get('/products', fn () => Inertia::render('Products/Index'))->name('products.index');
-    Route::get('/cart', fn () => Inertia::render('Cart/Index'))->name('cart.index');
+    Route::get('/products', fn () => Inertia::render('Products/Index'));
+    Route::get('/cart', fn () => Inertia::render('Cart/Index'));
 });
 
-/**
- * JSON endpoints (session auth, but WITHOUT Inertia middleware)
- */
+// Admin Inertia page
+Route::middleware(['auth', 'admin'])->group(function () {
+    Route::get('/admin', fn () => Inertia::render('Admin/Dashboard'));
+});
+
+// JSON endpoints (normal users)
 Route::middleware(['auth'])
     ->withoutMiddleware([HandleInertiaRequests::class])
     ->group(function () {
@@ -49,5 +51,14 @@ Route::middleware(['auth'])
 
         Route::post('/api/checkout', [CheckoutController::class, 'store']);
     });
+
+// JSON endpoints (ADMIN ONLY)
+Route::middleware(['auth', 'admin'])
+    ->withoutMiddleware([HandleInertiaRequests::class])
+    ->prefix('api/admin')
+    ->group(function () {
+        Route::get('/stats', [AdminDashboardController::class, 'stats']);
+    });
+
 
 require __DIR__ . '/auth.php';
