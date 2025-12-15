@@ -10,6 +10,8 @@ use App\Models\OrderItem;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\OrderConfirmationMail;
 
 class CheckoutController extends Controller
 {
@@ -83,16 +85,22 @@ class CheckoutController extends Controller
         return response()->json(['message' => $e->getMessage()], 422);
     }
 
-    foreach (array_unique($lowStockProductIds) as $id) {
-        $product = Product::find($id);
-        if ($product) {
-            dispatch(new \App\Jobs\SendLowStockEmail($product))->afterCommit();
-        }
+foreach (array_unique($lowStockProductIds) as $id) {
+    $product = Product::find($id);
+    if ($product) {
+        SendLowStockEmail::dispatch($product)->afterCommit();
     }
+}
 
-    return response()->json([
-        'message'  => 'Checkout complete.',
-        'order_id' => $order->id,
-    ]);
+Mail::to($user->email)
+    ->queue((new OrderConfirmationMail($order))->afterCommit());
+
+
+return response()->json([
+    'message'  => 'Checkout complete.',
+    'order_id' => $order->id,
+]);
+
+
 }
 }
