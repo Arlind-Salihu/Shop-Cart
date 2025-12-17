@@ -1,6 +1,8 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 import { useEffect, useMemo, useState } from "react";
+import { router } from "@inertiajs/react";
+import { csrfFetch } from "@/lib/csrfFetch";
 
 export default function CartIndex({ auth }) {
     const [items, setItems] = useState([]);
@@ -49,32 +51,21 @@ export default function CartIndex({ auth }) {
         await loadCart();
     };
 
-    const checkout = async () => {
-        setLoading(true);
+    async function checkout() {
         setMessage(null);
 
-        const res = await fetch("/api/checkout", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRF-TOKEN": csrfToken(),
-                "X-Requested-With": "XMLHttpRequest",
-            },
-        });
+        const res = await csrfFetch("/api/checkout", { method: "POST" });
+
+        const data = await res.json().catch(() => ({}));
 
         if (!res.ok) {
-            const err = await res.json().catch(() => ({}));
-            setMessage(err.message || "Checkout failed.");
-            setLoading(false);
+            setMessage(data.message || "Checkout failed.");
             return;
         }
 
-        setMessage("Checkout successful");
-        await loadCart();
-        setLoading(false);
-    };
-
+        // Go to payment method page for that order
+        router.visit(`/orders/${data.order_id}`);
+    }
 
     useEffect(() => {
         loadCart();

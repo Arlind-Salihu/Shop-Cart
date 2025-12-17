@@ -1,26 +1,35 @@
-<h2>Daily Sales Report - {{ $date }}</h2>
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Daily Sales Report</title>
+</head>
+<body style="font-family: Arial, sans-serif;">
+    <h2>Daily Sales Report - {{ $date }}</h2>
 
-@if ($rows->count() === 0)
-  <p>No sales recorded today.</p>
-@else
-  <table border="1" cellpadding="8" cellspacing="0">
-    <thead>
-      <tr>
-        <th>Product</th>
-        <th>Total Sold</th>
-        <th>Revenue</th>
-      </tr>
-    </thead>
-    <tbody>
-      @foreach ($rows as $row)
-        <tr>
-          <td>{{ $row->name }}</td>
-          <td>{{ $row->total_qty }}</td>
-          <td>${{ number_format($row->revenue / 100, 2) }}</td>
-        </tr>
-      @endforeach
-    </tbody>
-  </table>
+    <table cellpadding="8" cellspacing="0" border="1" style="border-collapse: collapse;">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Qty Sold</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach($rows as $row)
+            <tr>
+                <td>{{ $row['product'] }}</td>
+                <td>{{ $row['quantity'] }}</td>
+                <td>${{ number_format($row['price'] / 100, 2) }}</td>
+                <td>${{ number_format($row['subtotal'] / 100, 2) }}</td>
+            </tr>
+        @endforeach
+        </tbody>
+    </table>
 
-  <p><strong>Total Revenue:</strong> ${{ number_format($totalRevenue / 100, 2) }}</p>
-@endif
+    <p style="margin-top: 12px;">
+        <strong>Total Revenue:</strong> ${{ number_format($totalRevenue / 100, 2) }}
+    </p>
+</body>
+</html>
