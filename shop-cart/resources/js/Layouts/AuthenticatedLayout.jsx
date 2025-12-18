@@ -17,6 +17,7 @@ export default function AuthenticatedLayout({ header, children }) {
         if (isAdmin) {
             return [
                 { href: "/admin", label: "Dashboard", match: "/admin" },
+                { href: "/admin/products", label: "Products", match: "/admin/products" },
                 { href: "/admin/orders", label: "Orders", match: "/admin/orders" },
             ];
         }

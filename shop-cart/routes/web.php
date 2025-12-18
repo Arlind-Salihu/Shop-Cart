@@ -6,6 +6,7 @@ use App\Http\Middleware\HandleInertiaRequests;
 
 // Admin Controllers (API)
 use App\Http\Controllers\Api\AdminDashboardController;
+use App\Http\Controllers\Api\AdminProductsController;
 use App\Http\Controllers\Api\AdminOrdersController;
 
 // User Controllers
@@ -48,6 +49,9 @@ Route::middleware(['auth', 'user'])->group(function () {
 Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin', fn() => Inertia::render('Admin/Dashboard'))
         ->name('admin.dashboard');
+
+    Route::get('/admin/products', fn() => Inertia::render('Admin/Products/Index'))
+        ->name('admin.products.index');
 
     Route::get('/admin/orders', fn() => Inertia::render('Admin/Orders/Index'))
         ->name('admin.orders.index');
@@ -98,6 +102,14 @@ Route::middleware(['auth', 'admin'])
     ->prefix('api/admin')
     ->group(function () {
         Route::get('/stats', [AdminDashboardController::class, 'stats']);
+
+
+        Route::get('/products', [AdminProductsController::class, 'index']);
+        Route::post('/products', [AdminProductsController::class, 'store']);
+        Route::get('/products/{product}', [AdminProductsController::class, 'show']);
+        Route::post('/products/{product}', [AdminProductsController::class, 'update']);
+        Route::delete('/products/{product}', [AdminProductsController::class, 'destroy']);
+
         Route::get('/orders', [AdminOrdersController::class, 'index']);
         Route::get('/orders/{order}', [AdminOrdersController::class, 'show']);
     });

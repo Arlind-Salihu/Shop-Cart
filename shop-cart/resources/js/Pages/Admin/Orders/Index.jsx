@@ -15,8 +15,7 @@ export default function Index({ auth }) {
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState(null);
 
-    // UI filters
-    const [status, setStatus] = useState("all"); // all|pending|paid
+    const [status, setStatus] = useState("all");
     const [q, setQ] = useState("");
 
     async function loadOrders() {
@@ -42,7 +41,6 @@ export default function Index({ auth }) {
             }
 
             const data = await res.json();
-            // expected: array of orders (simple)
             setOrders(Array.isArray(data) ? data : data.data || []);
         } catch (e) {
             setMessage(e.message || "Failed to load orders.");
@@ -57,7 +55,6 @@ export default function Index({ auth }) {
     }, [status]);
 
     const filtered = useMemo(() => {
-        // If backend already filters, this is just extra safety/search
         const qq = q.trim().toLowerCase();
         if (!qq) return orders;
 

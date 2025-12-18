@@ -12,12 +12,10 @@ function csrf() {
 
 export default function Show({ auth, orderId: orderIdFromProps }) {
     const orderId = useMemo(() => {
-        // you already pass orderId from route: Inertia::render(..., ['orderId' => (int)$order])
         if (orderIdFromProps) return orderIdFromProps;
 
-        // fallback: /admin/orders/{id}
         const parts = window.location.pathname.split("/").filter(Boolean);
-        return parts[2]; // ["admin","orders","{id}"]
+        return parts[2];
     }, [orderIdFromProps]);
 
     const [order, setOrder] = useState(null);
@@ -76,7 +74,6 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                             Back to Orders
                         </Link>
 
-                        {/* Optional: let admin download invoice ONLY if paid (uses your user invoice route) */}
                         {/* {paid && ( */}
                         <a
                             href={`/admin/orders/${orderId}/invoice`}

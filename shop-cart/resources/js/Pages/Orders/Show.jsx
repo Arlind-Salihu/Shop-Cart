@@ -13,7 +13,7 @@ function csrf() {
 export default function Show({ auth }) {
     const orderId = useMemo(() => {
         const parts = window.location.pathname.split("/").filter(Boolean);
-        return parts[1]; // /orders/{id}
+        return parts[1];
     }, []);
 
     const [order, setOrder] = useState(null);
@@ -77,7 +77,7 @@ export default function Show({ auth }) {
             }
 
             await loadOrder();
-            setMessage("Payment completed ✅");
+            setMessage("Payment completed");
         } catch (e) {
             setMessage(e.message || "Payment failed.");
         } finally {
@@ -88,7 +88,6 @@ export default function Show({ auth }) {
     const isPaid = !!order?.is_paid || !!order?.paid_at;
     console.log(isPaid, " isPaid");
     function downloadInvoice() {
-        // Only allow after paid (UI also hides it, but keep this safe)
         console.log("Clicked");
 
         if (isPaid) {

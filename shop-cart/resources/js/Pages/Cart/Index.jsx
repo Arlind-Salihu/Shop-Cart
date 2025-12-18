@@ -51,21 +51,38 @@ export default function CartIndex({ auth }) {
         await loadCart();
     };
 
-    async function checkout() {
-        setMessage(null);
-
-        const res = await csrfFetch("/api/checkout", { method: "POST" });
-
-        const data = await res.json().catch(() => ({}));
-
-        if (!res.ok) {
-            setMessage(data.message || "Checkout failed.");
-            return;
-        }
-
-        // Go to payment method page for that order
-        router.visit(`/orders/${data.order_id}`);
+    function csrf() {
+        return document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") || "";
     }
+
+    async function checkout() {
+        try {
+            const res = await fetch("/api/checkout", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-CSRF-TOKEN": csrf(),
+                },
+                body: JSON.stringify({}),
+            });
+
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(text);
+            }
+
+            const data = await res.json();
+            console.log("Checkout success", data);
+            router.visit(`/orders/${data.order_id}`);
+        } catch (err) {
+            console.error("Checkout error:", err.message);
+        }
+    }
+
 
     useEffect(() => {
         loadCart();
@@ -160,7 +177,7 @@ export default function CartIndex({ auth }) {
                                                     onChange={(e) => {
                                                         const v = parseInt(
                                                             e.target.value ||
-                                                                "1",
+                                                            "1",
                                                             10
                                                         );
                                                         if (
@@ -188,10 +205,10 @@ export default function CartIndex({ auth }) {
                                                     }
                                                     disabled={
                                                         busyId ===
-                                                            it.product_id ||
+                                                        it.product_id ||
                                                         it.quantity + 1 >
-                                                            it.product
-                                                                .stock_quantity
+                                                        it.product
+                                                            .stock_quantity
                                                     }
                                                     className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
                                                 >

@@ -2,6 +2,15 @@ import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, Link } from "@inertiajs/react";
 import { useEffect, useState } from "react";
 
+function xsrfToken() {
+    return decodeURIComponent(
+        document.cookie
+            .split("; ")
+            .find((r) => r.startsWith("XSRF-TOKEN="))
+            ?.split("=")[1] ?? ""
+    );
+}
+
 export default function Index({ auth }) {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -16,8 +25,8 @@ export default function Index({ auth }) {
             const res = await fetch("/api/products", {
                 credentials: "same-origin",
                 headers: {
-                    "Content-Type": "application/json",
                     "X-Requested-With": "XMLHttpRequest",
+                    "X-XSRF-TOKEN": xsrfToken(),
                 },
             });
 
@@ -27,9 +36,9 @@ export default function Index({ auth }) {
             }
 
             const data = await res.json();
-            setProducts(data);
+            setProducts(Array.isArray(data) ? data : []);
         } catch (e) {
-            setMessage(e.message || "Failed to load products.");
+            setMessage(e?.message || "Failed to load products.");
         } finally {
             setLoading(false);
         }
@@ -39,29 +48,30 @@ export default function Index({ auth }) {
         setAddingId(productId);
         setMessage(null);
 
-        const token = document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content");
+        try {
+            const res = await fetch("/api/cart/items", {
+                method: "POST",
+                credentials: "same-origin",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-Requested-With": "XMLHttpRequest",
+                    "X-XSRF-TOKEN": xsrfToken(),
+                },
+                body: JSON.stringify({ product_id: productId, quantity: 1 }),
+            });
 
-        const res = await fetch("/api/cart/items", {
-            method: "POST",
-            credentials: "same-origin",
-            headers: {
-                "Content-Type": "application/json",
-                "X-Requested-With": "XMLHttpRequest",
-                "X-CSRF-TOKEN": token,
-            },
-            body: JSON.stringify({ product_id: productId, quantity: 1 }),
-        });
+            if (!res.ok) {
+                const text = await res.text();
+                throw new Error(`Add error ${res.status}: ${text}`);
+            }
 
-        if (!res.ok) {
-            const text = await res.text();
-            setMessage(`Failed (${res.status}): ${text}`);
-        } else {
-            setMessage("Added to cart");
+            setMessage("Added to cart ");
+            await loadProducts();
+        } catch (e) {
+            setMessage(e?.message || "Failed to add to cart.");
+        } finally {
+            setAddingId(null);
         }
-
-        setAddingId(null);
     }
 
     useEffect(() => {
@@ -76,12 +86,20 @@ export default function Index({ auth }) {
                     <h2 className="text-xl font-semibold leading-tight text-gray-800">
                         Products
                     </h2>
-                    <Link
-                        href="/cart"
-                        className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                    >
-                        View Cart
-                    </Link>
+                    <div className="flex gap-2">
+                        <Link
+                            href="/orders"
+                            className="rounded-md bg-gray-200 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-300"
+                        >
+                            Orders
+                        </Link>
+                        <Link
+                            href="/cart"
+                            className="rounded-md bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                        >
+                            View Cart
+                        </Link>
+                    </div>
                 </div>
             }
         >
@@ -105,49 +123,70 @@ export default function Index({ auth }) {
                                 {products.map((p) => (
                                     <div
                                         key={p.id}
-                                        className="rounded-lg border p-4"
+                                        className="overflow-hidden rounded-lg border"
                                     >
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <h3 className="text-lg font-semibold">
-                                                    {p.name}
-                                                </h3>
-                                                <p className="mt-1 text-sm text-gray-600">
-                                                    Price:{" "}
-                                                    <span className="font-medium">
-                                                        $
-                                                        {(
-                                                            p.price / 100
-                                                        ).toFixed(2)}
-                                                    </span>
-                                                </p>
-                                                <p className="text-sm text-gray-600">
-                                                    Stock:{" "}
-                                                    <span className="font-medium">
-                                                        {p.stock_quantity}
-                                                    </span>
-                                                </p>
-                                            </div>
+                                        <div className="aspect-[4/3] w-full bg-gray-50">
+                                            {p.image_url ? (
+                                                <img
+                                                    src={p.image_url}
+                                                    alt={p.name}
+                                                    className="mb-3 w-full rounded-md object-cover"
+                                                />
+                                            ) : (
+                                                <div className="mb-3 h-40 w-full rounded-md bg-gray-100 flex items-center justify-center text-xs text-gray-500">
+                                                    No image
+                                                </div>
+                                            )}
 
-                                            <button
-                                                onClick={() => addToCart(p.id)}
-                                                disabled={
-                                                    p.stock_quantity === 0 ||
-                                                    addingId === p.id
-                                                }
-                                                className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-                                            >
-                                                {addingId === p.id
-                                                    ? "Adding..."
-                                                    : "Add"}
-                                            </button>
                                         </div>
 
-                                        {p.stock_quantity === 0 && (
-                                            <p className="mt-3 text-xs text-red-600">
-                                                Out of stock
-                                            </p>
-                                        )}
+                                        <div className="p-4">
+                                            <div className="flex items-start justify-between gap-3">
+                                                <div>
+                                                    <h3 className="text-lg font-semibold">
+                                                        {p.name}
+                                                    </h3>
+
+                                                    <p className="mt-1 text-sm text-gray-600">
+                                                        Price:{" "}
+                                                        <span className="font-medium">
+                                                            $
+                                                            {(
+                                                                (p.price || 0) /
+                                                                100
+                                                            ).toFixed(2)}
+                                                        </span>
+                                                    </p>
+
+                                                    <p className="text-sm text-gray-600">
+                                                        Stock:{" "}
+                                                        <span className="font-medium">
+                                                            {p.stock_quantity ??
+                                                                0}
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                <button
+                                                    onClick={() => addToCart(p.id)}
+                                                    disabled={
+                                                        (p.stock_quantity ?? 0) ===
+                                                        0 || addingId === p.id
+                                                    }
+                                                    className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-blue-500"
+                                                >
+                                                    {addingId === p.id
+                                                        ? "Adding..."
+                                                        : "Add"}
+                                                </button>
+                                            </div>
+
+                                            {(p.stock_quantity ?? 0) === 0 && (
+                                                <p className="mt-3 text-xs text-red-600">
+                                                    Out of stock
+                                                </p>
+                                            )}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
