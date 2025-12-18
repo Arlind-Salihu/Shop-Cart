@@ -68,9 +68,12 @@ Route::middleware(['auth', 'admin'])->group(function () {
  * USER JSON endpoints (admins blocked, no Inertia middleware)
  */
 Route::middleware(['auth', 'user'])
-    ->withoutMiddleware([HandleInertiaRequests::class])
+    ->withoutMiddleware([
+        HandleInertiaRequests::class,
+        \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+    ])
     ->group(function () {
-        // profile routes (ziggy expects these names)
+        // profile routes...
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -94,24 +97,29 @@ Route::middleware(['auth', 'user'])
         Route::get('/api/orders/{order}/invoice', [OrderController::class, 'invoice']);
     });
 
+
 /**
  * ADMIN JSON endpoints (users blocked, no Inertia middleware)
  */
 Route::middleware(['auth', 'admin'])
-    ->withoutMiddleware([HandleInertiaRequests::class])
+    ->withoutMiddleware([
+        HandleInertiaRequests::class,
+        \Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class,
+    ])
     ->prefix('api/admin')
     ->group(function () {
-        Route::get('/stats', [AdminDashboardController::class, 'stats']);
 
+        Route::get('/stats', [AdminDashboardController::class, 'stats']);
 
         Route::get('/products', [AdminProductsController::class, 'index']);
         Route::post('/products', [AdminProductsController::class, 'store']);
         Route::get('/products/{product}', [AdminProductsController::class, 'show']);
-        Route::post('/products/{product}', [AdminProductsController::class, 'update']);
+        Route::put('/products/{product}', [AdminProductsController::class, 'update']);
         Route::delete('/products/{product}', [AdminProductsController::class, 'destroy']);
 
         Route::get('/orders', [AdminOrdersController::class, 'index']);
         Route::get('/orders/{order}', [AdminOrdersController::class, 'show']);
     });
+
 
 require __DIR__ . '/auth.php';

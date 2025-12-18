@@ -28,7 +28,7 @@ export default function Index({ auth }) {
 
         try {
             const res = await fetch(`/api/admin/orders?${params.toString()}`, {
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": csrf(),
@@ -105,7 +105,9 @@ export default function Index({ auth }) {
                                     </label>
                                     <select
                                         value={status}
-                                        onChange={(e) => setStatus(e.target.value)}
+                                        onChange={(e) =>
+                                            setStatus(e.target.value)
+                                        }
                                         className="mt-1 w-full rounded-md border-gray-300 text-sm"
                                     >
                                         <option value="all">All</option>
@@ -138,55 +140,88 @@ export default function Index({ auth }) {
 
                     <div className="rounded-lg bg-white p-6 shadow-sm">
                         {loading ? (
-                            <p className="text-sm text-gray-600">Loading orders...</p>
+                            <p className="text-sm text-gray-600">
+                                Loading orders...
+                            </p>
                         ) : filtered.length === 0 ? (
-                            <p className="text-sm text-gray-600">No orders found.</p>
+                            <p className="text-sm text-gray-600">
+                                No orders found.
+                            </p>
                         ) : (
                             <div className="overflow-x-auto">
                                 <table className="w-full border-collapse text-sm">
                                     <thead>
                                         <tr className="border-b">
-                                            <th className="py-2 text-left">ID</th>
-                                            <th className="py-2 text-left">Customer</th>
-                                            <th className="py-2 text-left">Status</th>
-                                            <th className="py-2 text-left">Total</th>
-                                            <th className="py-2 text-left">Created</th>
-                                            <th className="py-2 text-right">Actions</th>
+                                            <th className="py-2 text-left">
+                                                ID
+                                            </th>
+                                            <th className="py-2 text-left">
+                                                Customer
+                                            </th>
+                                            <th className="py-2 text-left">
+                                                Status
+                                            </th>
+                                            <th className="py-2 text-left">
+                                                Total
+                                            </th>
+                                            <th className="py-2 text-left">
+                                                Created
+                                            </th>
+                                            <th className="py-2 text-right">
+                                                Actions
+                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {filtered.map((o) => {
-                                            const paid = o.status === "paid" || !!o.is_paid;
+                                            const paid =
+                                                o.status === "paid" ||
+                                                !!o.is_paid;
                                             return (
-                                                <tr key={o.id} className="border-b last:border-0">
-                                                    <td className="py-3 font-medium">#{o.id}</td>
+                                                <tr
+                                                    key={o.id}
+                                                    className="border-b last:border-0"
+                                                >
+                                                    <td className="py-3 font-medium">
+                                                        #{o.id}
+                                                    </td>
                                                     <td className="py-3">
                                                         <div className="font-medium text-gray-900">
-                                                            {o.user?.name || "—"}
+                                                            {o.user?.name ||
+                                                                "—"}
                                                         </div>
                                                         <div className="text-xs text-gray-600">
-                                                            {o.user?.email || "—"}
+                                                            {o.user?.email ||
+                                                                "—"}
                                                         </div>
                                                     </td>
                                                     <td className="py-3">
                                                         <span
-                                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${paid
-                                                                ? "bg-green-100 text-green-700"
-                                                                : "bg-yellow-100 text-yellow-800"
-                                                                }`}
+                                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                                                paid
+                                                                    ? "bg-green-100 text-green-700"
+                                                                    : "bg-yellow-100 text-yellow-800"
+                                                            }`}
                                                         >
-                                                            {paid ? "PAID" : "PENDING"}
+                                                            {paid
+                                                                ? "PAID"
+                                                                : "PENDING"}
                                                         </span>
                                                     </td>
                                                     <td className="py-3 text-left font-medium">
-                                                        ${(((o.total || 0) / 100).toFixed(2))}
+                                                        $
+                                                        {(
+                                                            (o.total || 0) / 100
+                                                        ).toFixed(2)}
                                                     </td>
                                                     <td className="py-3 text-gray-700">
-                                                        {
-                                                            o.created_at
-                                                                ? new Date(o.created_at).toLocaleDateString("en-GB")
-                                                                : "—"
-                                                        }
+                                                        {o.created_at
+                                                            ? new Date(
+                                                                  o.created_at
+                                                              ).toLocaleDateString(
+                                                                  "en-GB"
+                                                              )
+                                                            : "—"}
                                                     </td>
                                                     <td className="py-3 text-right">
                                                         <Link

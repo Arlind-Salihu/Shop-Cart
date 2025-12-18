@@ -28,7 +28,7 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
 
         try {
             const res = await fetch(`/api/admin/orders/${orderId}`, {
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": csrf(),
@@ -99,9 +99,13 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <div className="lg:col-span-2 rounded-lg bg-white p-6 shadow-sm">
                             {loading ? (
-                                <p className="text-sm text-gray-600">Loading order...</p>
+                                <p className="text-sm text-gray-600">
+                                    Loading order...
+                                </p>
                             ) : !order ? (
-                                <p className="text-sm text-gray-600">Order not found.</p>
+                                <p className="text-sm text-gray-600">
+                                    Order not found.
+                                </p>
                             ) : (
                                 <>
                                     <div className="mb-4 flex items-start justify-between gap-4">
@@ -120,19 +124,22 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                                                 Created
                                             </div>
                                             <div className="text-sm font-medium text-gray-800">
-                                                {
-                                                    order.created_at
-                                                        ? new Date(order.created_at).toLocaleDateString("en-GB")
-                                                        : "—"
-                                                }
+                                                {order.created_at
+                                                    ? new Date(
+                                                          order.created_at
+                                                      ).toLocaleDateString(
+                                                          "en-GB"
+                                                      )
+                                                    : "—"}
                                             </div>
                                         </div>
 
                                         <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${paid
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-yellow-100 text-yellow-800"
-                                                }`}
+                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                                paid
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                            }`}
                                         >
                                             {paid ? "PAID" : "PENDING PAYMENT"}
                                         </span>
@@ -142,35 +149,66 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                                         <table className="w-full border-collapse text-sm">
                                             <thead>
                                                 <tr className="border-b">
-                                                    <th className="py-2 text-left">Product</th>
-                                                    <th className="py-2 text-right">Price</th>
-                                                    <th className="py-2 text-right">Qty</th>
-                                                    <th className="py-2 text-right">Subtotal</th>
+                                                    <th className="py-2 text-left">
+                                                        Product
+                                                    </th>
+                                                    <th className="py-2 text-right">
+                                                        Price
+                                                    </th>
+                                                    <th className="py-2 text-right">
+                                                        Qty
+                                                    </th>
+                                                    <th className="py-2 text-right">
+                                                        Subtotal
+                                                    </th>
                                                 </tr>
                                             </thead>
                                             <tbody>
                                                 {items.map((it) => (
-                                                    <tr key={it.id} className="border-b last:border-0">
+                                                    <tr
+                                                        key={it.id}
+                                                        className="border-b last:border-0"
+                                                    >
                                                         <td className="py-3">
-                                                            {it.product?.name || `Product #${it.product_id}`}
+                                                            {it.product?.name ||
+                                                                `Product #${it.product_id}`}
                                                         </td>
                                                         <td className="py-3 text-right">
-                                                            ${(((it.price || 0) / 100).toFixed(2))}
+                                                            $
+                                                            {(
+                                                                (it.price ||
+                                                                    0) / 100
+                                                            ).toFixed(2)}
                                                         </td>
-                                                        <td className="py-3 text-right">{it.quantity}</td>
+                                                        <td className="py-3 text-right">
+                                                            {it.quantity}
+                                                        </td>
                                                         <td className="py-3 text-right font-medium">
-                                                            ${((((it.price || 0) * it.quantity) / 100).toFixed(2))}
+                                                            $
+                                                            {(
+                                                                ((it.price ||
+                                                                    0) *
+                                                                    it.quantity) /
+                                                                100
+                                                            ).toFixed(2)}
                                                         </td>
                                                     </tr>
                                                 ))}
                                             </tbody>
                                             <tfoot>
                                                 <tr>
-                                                    <th className="py-3 text-right" colSpan={3}>
+                                                    <th
+                                                        className="py-3 text-right"
+                                                        colSpan={3}
+                                                    >
                                                         Total
                                                     </th>
                                                     <th className="py-3 text-right">
-                                                        ${(((order.total || 0) / 100).toFixed(2))}
+                                                        $
+                                                        {(
+                                                            (order.total || 0) /
+                                                            100
+                                                        ).toFixed(2)}
                                                     </th>
                                                 </tr>
                                             </tfoot>
@@ -181,7 +219,9 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                         </div>
 
                         <div className="rounded-lg bg-white p-6 shadow-sm">
-                            <h3 className="text-lg font-semibold">Admin Notes</h3>
+                            <h3 className="text-lg font-semibold">
+                                Admin Notes
+                            </h3>
                             {!order ? (
                                 <p className="mt-2 text-sm text-gray-600">
                                     Load order to view details.
@@ -189,19 +229,28 @@ export default function Show({ auth, orderId: orderIdFromProps }) {
                             ) : (
                                 <div className="mt-3 space-y-2 text-sm text-gray-700">
                                     <div>
-                                        <span className="font-medium">Order ID:</span> #{order.id}
+                                        <span className="font-medium">
+                                            Order ID:
+                                        </span>{" "}
+                                        #{order.id}
                                     </div>
                                     <div>
-                                        <span className="font-medium">Status:</span>{" "}
+                                        <span className="font-medium">
+                                            Status:
+                                        </span>{" "}
                                         {paid ? "paid" : "pending"}
                                     </div>
                                     <div>
-                                        <span className="font-medium">Items:</span> {items.length}
+                                        <span className="font-medium">
+                                            Items:
+                                        </span>{" "}
+                                        {items.length}
                                     </div>
 
                                     {!paid && (
                                         <div className="mt-3 rounded-md border border-yellow-200 bg-yellow-50 p-3 text-xs text-yellow-800">
-                                            Invoice is locked until payment is completed.
+                                            Invoice is locked until payment is
+                                            completed.
                                         </div>
                                     )}
                                 </div>

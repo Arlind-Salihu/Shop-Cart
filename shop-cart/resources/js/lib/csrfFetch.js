@@ -24,6 +24,6 @@ export async function csrfFetch(url, options = {}) {
     return fetch(url, {
         ...options,
         headers,
-        credentials: "same-origin", // important for session cookies
+        credentials: "include", // important for session cookies
     });
 }

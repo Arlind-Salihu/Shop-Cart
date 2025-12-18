@@ -29,7 +29,7 @@ export default function Show({ auth }) {
 
         try {
             const res = await fetch(`/api/orders/${orderId}`, {
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": csrf(),
@@ -57,7 +57,7 @@ export default function Show({ auth }) {
         try {
             const res = await fetch(`/api/orders/${order.id}/pay`, {
                 method: "POST",
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Requested-With": "XMLHttpRequest",
@@ -154,19 +154,22 @@ export default function Show({ auth }) {
                                         <div className="text-sm text-gray-600">
                                             Created:{" "}
                                             <span className="font-medium text-gray-800">
-                                                        {
-                                                            order.created_at
-                                                                ? new Date(order.created_at).toLocaleDateString("en-GB")
-                                                                : "—"
-                                                        }
+                                                {order.created_at
+                                                    ? new Date(
+                                                          order.created_at
+                                                      ).toLocaleDateString(
+                                                          "en-GB"
+                                                      )
+                                                    : "—"}
                                             </span>
                                         </div>
 
                                         <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${isPaid
-                                                ? "bg-green-100 text-green-700"
-                                                : "bg-yellow-100 text-yellow-800"
-                                                }`}
+                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
+                                                isPaid
+                                                    ? "bg-green-100 text-green-700"
+                                                    : "bg-yellow-100 text-yellow-800"
+                                            }`}
                                         >
                                             {isPaid
                                                 ? "PAID"

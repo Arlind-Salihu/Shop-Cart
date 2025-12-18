@@ -23,7 +23,7 @@ export default function Index({ auth }) {
 
         try {
             const res = await fetch("/api/products", {
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-XSRF-TOKEN": xsrfToken(),
@@ -51,7 +51,7 @@ export default function Index({ auth }) {
         try {
             const res = await fetch("/api/cart/items", {
                 method: "POST",
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Requested-With": "XMLHttpRequest",
@@ -137,7 +137,6 @@ export default function Index({ auth }) {
                                                     No image
                                                 </div>
                                             )}
-
                                         </div>
 
                                         <div className="p-4">
@@ -168,10 +167,13 @@ export default function Index({ auth }) {
                                                 </div>
 
                                                 <button
-                                                    onClick={() => addToCart(p.id)}
+                                                    onClick={() =>
+                                                        addToCart(p.id)
+                                                    }
                                                     disabled={
-                                                        (p.stock_quantity ?? 0) ===
-                                                        0 || addingId === p.id
+                                                        (p.stock_quantity ??
+                                                            0) === 0 ||
+                                                        addingId === p.id
                                                     }
                                                     className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 hover:bg-blue-500"
                                                 >

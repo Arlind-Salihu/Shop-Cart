@@ -9,17 +9,26 @@ export default function Index({ auth }) {
     const [message, setMessage] = useState(null);
 
     const [editing, setEditing] = useState(null);
-    const [form, setForm] = useState({ name: "", price: "", stock_quantity: "", image: null, remove_image: false });
+    const [form, setForm] = useState({
+        name: "",
+        price: "",
+        stock_quantity: "",
+        image: null,
+        remove_image: false,
+    });
     const [saving, setSaving] = useState(false);
 
     async function load() {
         setLoading(true);
         setMessage(null);
         try {
-            const res = await fetch(`/api/admin/products?q=${encodeURIComponent(q)}`, {
-                credentials: "same-origin",
-                headers: { "X-Requested-With": "XMLHttpRequest" },
-            });
+            const res = await fetch(
+                `/api/admin/products?q=${encodeURIComponent(q)}`,
+                {
+                    credentials: "include",
+                    headers: { "X-Requested-With": "XMLHttpRequest" },
+                }
+            );
             const data = await res.json();
             setItems(Array.isArray(data) ? data : []);
         } catch (e) {
@@ -29,45 +38,72 @@ export default function Index({ auth }) {
         }
     }
 
-    useEffect(() => { load(); }, []); // eslint-disable-line
+    useEffect(() => {
+        load();
+    }, []); // eslint-disable-line
 
     function openCreate() {
         setEditing(null);
-        setForm({ name: "", price: "", stock_quantity: "", image: null, remove_image: false });
+        setForm({
+            name: "",
+            price: "",
+            stock_quantity: "",
+            image: null,
+            remove_image: false,
+        });
     }
 
     function openEdit(p) {
         setEditing(p);
         setForm({
             name: p.name || "",
-            price: String(p.price ?? ""),
+            price: p.price != null ? (p.price / 100).toFixed(2) : "",
             stock_quantity: String(p.stock_quantity ?? ""),
             image: null,
             remove_image: false,
         });
     }
 
+
     function csrf() {
-        return document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content") || "";
+        return (
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content") || ""
+        );
     }
 
     async function save() {
         setSaving(true);
         setMessage(null);
+
         try {
             const fd = new FormData();
             fd.append("name", form.name);
-            fd.append("price", form.price);
+            const dollars = String(form.price).replace(",", ".").trim();
+            const cents =
+                dollars === ""
+                    ? ""
+                    : String(Math.round(parseFloat(dollars) * 100));
+            fd.append("price", cents);
+
             fd.append("stock_quantity", form.stock_quantity);
             if (form.image) fd.append("image", form.image);
             if (form.remove_image) fd.append("remove_image", "1");
 
-            const url = editing ? `/api/admin/products/${editing.id}` : `/api/admin/products`;
+            const url = editing
+                ? `/api/admin/products/${editing.id}`
+                : `/api/admin/products`;
+
+            // IMPORTANT: always POST with FormData, spoof method for update
+            if (editing) fd.append("_method", "PUT");
+            const token = csrf();
+            fd.append("_token", token); // add this
+            console.log("CSRF:", csrf());
+
             const res = await fetch(url, {
                 method: "POST",
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "X-Requested-With": "XMLHttpRequest",
                     "X-CSRF-TOKEN": csrf(),
@@ -92,31 +128,40 @@ export default function Index({ auth }) {
 
     async function del(p) {
         if (!confirm(`Delete "${p.name}"?`)) return;
-        setMessage(null);
-        try {
-            const res = await fetch(`/api/admin/products/${p.id}`, {
-                method: "DELETE",
-                credentials: "same-origin",
-                headers: {
-                    "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN": csrf(),
-                },
-            });
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`Delete failed (${res.status}): ${text}`);
-            }
-            await load();
-            setMessage("Deleted");
-        } catch (e) {
-            setMessage(e.message || "Delete failed");
+
+        const fd = new FormData();
+        const token = csrf();
+        fd.append("_method", "DELETE");
+        fd.append("_token", token); // add this
+
+        const res = await fetch(`/api/admin/products/${p.id}`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+                "X-Requested-With": "XMLHttpRequest",
+                "X-CSRF-TOKEN": csrf(),
+            },
+            body: fd,
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            throw new Error(`Delete failed (${res.status}): ${text}`);
         }
+        await load();
+        setMessage("Deleted");
     }
 
-    const title = useMemo(() => (editing ? `Edit #${editing.id}` : "Create Product"), [editing]);
+    const title = useMemo(
+        () => (editing ? `Edit #${editing.id}` : "Create Product"),
+        [editing]
+    );
 
     return (
-        <AuthenticatedLayout user={auth.user} header={<h2 className="text-xl font-semibold">Admin · Products</h2>}>
+        <AuthenticatedLayout
+            user={auth.user}
+            header={<h2 className="text-xl font-semibold">Admin · Products</h2>}
+        >
             <Head title="Admin Products" />
 
             <div className="py-8">
@@ -154,13 +199,20 @@ export default function Index({ auth }) {
                     <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
                         <div className="lg:col-span-2 rounded-lg bg-white p-6 shadow-sm">
                             {loading ? (
-                                <p className="text-sm text-gray-600">Loading...</p>
+                                <p className="text-sm text-gray-600">
+                                    Loading...
+                                </p>
                             ) : items.length === 0 ? (
-                                <p className="text-sm text-gray-600">No products.</p>
+                                <p className="text-sm text-gray-600">
+                                    No products.
+                                </p>
                             ) : (
                                 <div className="divide-y">
                                     {items.map((p) => (
-                                        <div key={p.id} className="flex items-center justify-between gap-3 py-4">
+                                        <div
+                                            key={p.id}
+                                            className="flex items-center justify-between gap-3 py-4"
+                                        >
                                             <div className="flex items-center gap-3">
                                                 <div className="h-14 w-14 overflow-hidden rounded-md border bg-gray-50">
                                                     {p.image_url ? (
@@ -174,13 +226,19 @@ export default function Index({ auth }) {
                                                             No image
                                                         </div>
                                                     )}
-
                                                 </div>
 
                                                 <div>
-                                                    <div className="font-medium">{p.name}</div>
+                                                    <div className="font-medium">
+                                                        {p.name}
+                                                    </div>
                                                     <div className="text-xs text-gray-600">
-                                                        #{p.id} · ${((p.price || 0) / 100).toFixed(2)} · Stock: {p.stock_quantity}
+                                                        #{p.id} · $
+                                                        {(
+                                                            (p.price || 0) / 100
+                                                        ).toFixed(2)}{" "}
+                                                        · Stock:{" "}
+                                                        {p.stock_quantity}
                                                     </div>
                                                 </div>
                                             </div>
@@ -208,34 +266,62 @@ export default function Index({ auth }) {
                         <div className="rounded-lg bg-white p-6 shadow-sm">
                             <h3 className="text-lg font-semibold">{title}</h3>
 
-                            <label className="mt-4 block text-sm font-medium text-gray-700">Name</label>
+                            <label className="mt-4 block text-sm font-medium text-gray-700">
+                                Name
+                            </label>
                             <input
                                 value={form.name}
-                                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        name: e.target.value,
+                                    }))
+                                }
                                 className="mt-1 w-full rounded-md border-gray-300 text-sm"
                             />
 
-                            <label className="mt-4 block text-sm font-medium text-gray-700">Price (cents)</label>
+                            <label className="mt-4 block text-sm font-medium text-gray-700">
+                                Price ($)
+                            </label>
                             <input
                                 value={form.price}
-                                onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        price: e.target.value,
+                                    }))
+                                }
                                 className="mt-1 w-full rounded-md border-gray-300 text-sm"
-                                inputMode="numeric"
+                                inputMode="decimal"
                             />
 
-                            <label className="mt-4 block text-sm font-medium text-gray-700">Stock</label>
+                            <label className="mt-4 block text-sm font-medium text-gray-700">
+                                Stock
+                            </label>
                             <input
                                 value={form.stock_quantity}
-                                onChange={(e) => setForm((f) => ({ ...f, stock_quantity: e.target.value }))}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        stock_quantity: e.target.value,
+                                    }))
+                                }
                                 className="mt-1 w-full rounded-md border-gray-300 text-sm"
                                 inputMode="numeric"
                             />
 
-                            <label className="mt-4 block text-sm font-medium text-gray-700">Image</label>
+                            <label className="mt-4 block text-sm font-medium text-gray-700">
+                                Image
+                            </label>
                             <input
                                 type="file"
                                 accept="image/*"
-                                onChange={(e) => setForm((f) => ({ ...f, image: e.target.files?.[0] || null }))}
+                                onChange={(e) =>
+                                    setForm((f) => ({
+                                        ...f,
+                                        image: e.target.files?.[0] || null,
+                                    }))
+                                }
                                 className="mt-1 w-full text-sm"
                             />
 
@@ -244,7 +330,12 @@ export default function Index({ auth }) {
                                     <input
                                         type="checkbox"
                                         checked={form.remove_image}
-                                        onChange={(e) => setForm((f) => ({ ...f, remove_image: e.target.checked }))}
+                                        onChange={(e) =>
+                                            setForm((f) => ({
+                                                ...f,
+                                                remove_image: e.target.checked,
+                                            }))
+                                        }
                                     />
                                     Remove current image
                                 </label>

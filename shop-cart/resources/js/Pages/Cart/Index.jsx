@@ -26,7 +26,7 @@ export default function CartIndex({ auth }) {
     const updateQty = async (productId, quantity) => {
         await fetch(`/api/cart/items/${productId}`, {
             method: "PATCH",
-            credentials: "same-origin",
+            credentials: "include",
             headers: {
                 "Content-Type": "application/json",
                 "X-CSRF-TOKEN": csrfToken(),
@@ -41,7 +41,7 @@ export default function CartIndex({ auth }) {
     const removeItem = async (productId) => {
         await fetch(`/api/cart/items/${productId}`, {
             method: "DELETE",
-            credentials: "same-origin",
+            credentials: "include",
             headers: {
                 "X-CSRF-TOKEN": csrfToken(),
                 "X-Requested-With": "XMLHttpRequest",
@@ -52,16 +52,18 @@ export default function CartIndex({ auth }) {
     };
 
     function csrf() {
-        return document
-            .querySelector('meta[name="csrf-token"]')
-            ?.getAttribute("content") || "";
+        return (
+            document
+                .querySelector('meta[name="csrf-token"]')
+                ?.getAttribute("content") || ""
+        );
     }
 
     async function checkout() {
         try {
             const res = await fetch("/api/checkout", {
                 method: "POST",
-                credentials: "same-origin",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Requested-With": "XMLHttpRequest",
@@ -82,7 +84,6 @@ export default function CartIndex({ auth }) {
             console.error("Checkout error:", err.message);
         }
     }
-
 
     useEffect(() => {
         loadCart();
@@ -177,7 +178,7 @@ export default function CartIndex({ auth }) {
                                                     onChange={(e) => {
                                                         const v = parseInt(
                                                             e.target.value ||
-                                                            "1",
+                                                                "1",
                                                             10
                                                         );
                                                         if (
@@ -205,10 +206,10 @@ export default function CartIndex({ auth }) {
                                                     }
                                                     disabled={
                                                         busyId ===
-                                                        it.product_id ||
+                                                            it.product_id ||
                                                         it.quantity + 1 >
-                                                        it.product
-                                                            .stock_quantity
+                                                            it.product
+                                                                .stock_quantity
                                                     }
                                                     className="rounded-md border px-3 py-2 text-sm disabled:opacity-50"
                                                 >

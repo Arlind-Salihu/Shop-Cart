@@ -14,7 +14,7 @@ import {
 } from "recharts";
 
 function money(cents) {
-    const v = (Number(cents || 0) / 100);
+    const v = Number(cents || 0) / 100;
     return new Intl.NumberFormat("en-US", {
         style: "currency",
         currency: "USD",
@@ -32,7 +32,7 @@ export default function Dashboard({ auth }) {
 
         try {
             const res = await fetch("/api/admin/stats", {
-                credentials: "same-origin",
+                credentials: "include",
                 headers: { "X-Requested-With": "XMLHttpRequest" },
             });
 
@@ -108,7 +108,9 @@ export default function Dashboard({ auth }) {
 
                     {loading ? (
                         <div className="rounded-lg bg-white p-6 shadow-sm">
-                            <p className="text-sm text-gray-600">Loading dashboard...</p>
+                            <p className="text-sm text-gray-600">
+                                Loading dashboard...
+                            </p>
                         </div>
                     ) : !stats ? (
                         <div className="rounded-lg bg-white p-6 shadow-sm">
@@ -119,21 +121,27 @@ export default function Dashboard({ auth }) {
                             {/* KPI cards */}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
                                 <div className="rounded-lg bg-white p-5 shadow-sm">
-                                    <div className="text-xs text-gray-500">Orders Today</div>
+                                    <div className="text-xs text-gray-500">
+                                        Orders Today
+                                    </div>
                                     <div className="mt-1 text-2xl font-semibold">
                                         {stats.orders_today ?? 0}
                                     </div>
                                 </div>
 
                                 <div className="rounded-lg bg-white p-5 shadow-sm">
-                                    <div className="text-xs text-gray-500">Revenue Today</div>
+                                    <div className="text-xs text-gray-500">
+                                        Revenue Today
+                                    </div>
                                     <div className="mt-1 text-2xl font-semibold">
                                         {money(stats.revenue_today_cents)}
                                     </div>
                                 </div>
 
                                 <div className="rounded-lg bg-white p-5 shadow-sm">
-                                    <div className="text-xs text-gray-500">Products Total</div>
+                                    <div className="text-xs text-gray-500">
+                                        Products Total
+                                    </div>
                                     <div className="mt-1 text-2xl font-semibold">
                                         {stats.products_total ?? 0}
                                     </div>
@@ -156,16 +164,28 @@ export default function Dashboard({ auth }) {
                                         Revenue (Last 7 Days)
                                     </h3>
                                     <div className="mt-4 h-64">
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer
+                                            width="100%"
+                                            height="100%"
+                                        >
                                             <AreaChart data={revenueSeries}>
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis dataKey="label" />
                                                 <YAxis />
                                                 <Tooltip
-                                                    formatter={(value) => money(Number(value) * 100)}
-                                                    labelFormatter={(label) => `Day ${label}`}
+                                                    formatter={(value) =>
+                                                        money(
+                                                            Number(value) * 100
+                                                        )
+                                                    }
+                                                    labelFormatter={(label) =>
+                                                        `Day ${label}`
+                                                    }
                                                 />
-                                                <Area type="monotone" dataKey="revenue" />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="revenue"
+                                                />
                                             </AreaChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -176,14 +196,21 @@ export default function Dashboard({ auth }) {
                                         Orders (Last 7 Days)
                                     </h3>
                                     <div className="mt-4 h-64">
-                                        <ResponsiveContainer width="100%" height="100%">
+                                        <ResponsiveContainer
+                                            width="100%"
+                                            height="100%"
+                                        >
                                             <BarChart data={ordersSeries}>
                                                 <CartesianGrid strokeDasharray="3 3" />
                                                 <XAxis dataKey="label" />
                                                 <YAxis allowDecimals={false} />
                                                 <Tooltip
-                                                    formatter={(value) => `${value} orders`}
-                                                    labelFormatter={(label) => `Day ${label}`}
+                                                    formatter={(value) =>
+                                                        `${value} orders`
+                                                    }
+                                                    labelFormatter={(label) =>
+                                                        `Day ${label}`
+                                                    }
                                                 />
                                                 <Bar dataKey="orders" />
                                             </BarChart>
