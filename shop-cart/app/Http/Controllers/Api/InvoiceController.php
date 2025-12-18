@@ -5,21 +5,28 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Http\Request;
 
 class InvoiceController extends Controller
 {
-    public function download(Request $request, Order $order)
+    public function invoice(Order $order)
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        // Security
+        if ($order->user_id !== auth()->id()) {
+            abort(403);
+        }
 
-        $order->load(['items.product:id,name']);
+        if (!$order->is_paid) {
+            abort(403, 'Order not paid');
+        }
+
+        $order->load(['items.product', 'user']);
 
         $pdf = Pdf::loadView('pdf.invoice', [
-            'order' => $order,
-            'user' => $request->user(),
+            'order' => $order
         ]);
 
-        return $pdf->download("invoice-order-{$order->id}.pdf");
+        return $pdf->download(
+            'invoice-order-' . $order->id . '.pdf'
+        );
     }
 }

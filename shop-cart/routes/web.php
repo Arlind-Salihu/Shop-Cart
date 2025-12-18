@@ -40,7 +40,7 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/orders', fn() => Inertia::render('Orders/Index'))->name('orders.index');
     Route::get('/orders/{order}', fn() => Inertia::render('Orders/Show'))->name('orders.show');
-    Route::get('/orders/{order}/invoice', [\App\Http\Controllers\OrderInvoiceController::class, 'show'])
+    Route::get('/orders/{order}/invoice', [InvoiceController::class, 'invoice'])
         ->name('orders.invoice');
 });
 
@@ -49,6 +49,7 @@ Route::middleware(['auth', 'admin'])->group(function () {
     Route::get('/admin', fn() => Inertia::render('Admin/Dashboard'));
     Route::get('/admin/orders', fn() => Inertia::render('Admin/Orders/Index'))->name('admin.orders.index');
     Route::get('/admin/orders/{order}', fn($order) => Inertia::render('Admin/Orders/Show', ['orderId' => (int) $order]))->name('admin.orders.show');
+    
 });
 
 // JSON endpoints (normal users)

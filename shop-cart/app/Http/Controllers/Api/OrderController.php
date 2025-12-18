@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Illuminate\Validation\Rule;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class OrderController extends Controller
 {
@@ -51,7 +53,7 @@ class OrderController extends Controller
         }
 
         $request->validate([
-            'payment_method' => ['required', 'in:test'],
+            'payment_method' => ['required', Rule::in(['test_card', 'test_cash'])],
         ]);
 
         $order->forceFill([
@@ -61,16 +63,24 @@ class OrderController extends Controller
 
         return response()->json(['message' => 'Payment successful.']);
     }
+    
 
     public function invoice(Request $request, Order $order)
     {
-        abort_unless($order->user_id === $request->user()->id, 403);
+        abort_unless($order->user_id === auth()->id() || auth()->user()->is_admin, 403);
+        abort_unless($order->status === 'paid', 403); // block until paid
+
+        $html = view('pdf.invoice', ['order' => $order->load('items.product')])->render();
+
+        // If you have dompdf installed:
+        return Pdf::loadHTML($html)
+            ->download("invoice-{$order->id}.pdf");
 
         if ($order->status !== 'paid') {
             abort(Response::HTTP_FORBIDDEN, 'Invoice is available only after payment.');
         }
 
-        $order->load(['items.product']);
+        $order->load(['items.product','user']);
 
         return view('invoice', ['order' => $order]);
     }

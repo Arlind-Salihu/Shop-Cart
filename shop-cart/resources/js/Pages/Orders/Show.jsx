@@ -55,15 +55,20 @@ export default function Show({ auth }) {
         setMessage(null);
 
         try {
-            const res = await fetch(`/api/orders/${orderId}/pay`, {
+            const res = await fetch(`/api/orders/${order.id}/pay`, {
                 method: "POST",
                 credentials: "same-origin",
                 headers: {
                     "Content-Type": "application/json",
                     "X-Requested-With": "XMLHttpRequest",
-                    "X-CSRF-TOKEN": csrf(),
+                    "X-XSRF-TOKEN": decodeURIComponent(
+                        document.cookie
+                            .split("; ")
+                            .find((r) => r.startsWith("XSRF-TOKEN="))
+                            ?.split("=")[1] ?? ""
+                    ),
                 },
-                body: JSON.stringify({ payment_method: method }),
+                body: JSON.stringify({ payment_method: method }), // method must be 'test_card' or 'test_cash'
             });
 
             if (!res.ok) {
@@ -79,20 +84,25 @@ export default function Show({ auth }) {
             setPaying(false);
         }
     }
-
+    const items = order?.items || [];
+    const isPaid = !!order?.is_paid || !!order?.paid_at;
+    console.log(isPaid, " isPaid");
     function downloadInvoice() {
         // Only allow after paid (UI also hides it, but keep this safe)
-        if (!order?.is_paid) return;
-        window.location.href = `/orders/${orderId}/invoice`;
+        console.log("Clicked");
+
+        if (isPaid) {
+            window.location.href = `/orders/${order.id}/invoice`;
+            console.log("Clicked");
+        } else {
+            return;
+        }
     }
 
     useEffect(() => {
         loadOrder();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
-
-    const items = order?.items || [];
-    const isPaid = !!order?.is_paid;
 
     return (
         <AuthenticatedLayout
@@ -275,6 +285,9 @@ export default function Show({ auth }) {
                                     >
                                         <option value="test_card">
                                             Test Card
+                                        </option>
+                                        <option value="test_cash">
+                                            Test Cash
                                         </option>
                                         <option value="cash_on_delivery">
                                             Cash on Delivery
