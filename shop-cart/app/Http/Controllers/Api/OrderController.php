@@ -68,11 +68,10 @@ class OrderController extends Controller
     public function invoice(Request $request, Order $order)
     {
         abort_unless($order->user_id === auth()->id() || auth()->user()->is_admin, 403);
-        abort_unless($order->status === 'paid', 403); // block until paid
+        abort_unless($order->status === 'paid', 403);
 
         $html = view('pdf.invoice', ['order' => $order->load('items.product')])->render();
 
-        // If you have dompdf installed:
         return Pdf::loadHTML($html)
             ->download("invoice-{$order->id}.pdf");
 

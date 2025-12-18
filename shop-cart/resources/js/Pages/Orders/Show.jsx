@@ -155,18 +155,19 @@ export default function Show({ auth }) {
                                         <div className="text-sm text-gray-600">
                                             Created:{" "}
                                             <span className="font-medium text-gray-800">
-                                                {order.created_at_human ||
-                                                    order.created_at ||
-                                                    "-"}
+                                                        {
+                                                            order.created_at
+                                                                ? new Date(order.created_at).toLocaleDateString("en-GB")
+                                                                : "—"
+                                                        }
                                             </span>
                                         </div>
 
                                         <span
-                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                                isPaid
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-yellow-100 text-yellow-800"
-                                            }`}
+                                            className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${isPaid
+                                                ? "bg-green-100 text-green-700"
+                                                : "bg-yellow-100 text-yellow-800"
+                                                }`}
                                         >
                                             {isPaid
                                                 ? "PAID"

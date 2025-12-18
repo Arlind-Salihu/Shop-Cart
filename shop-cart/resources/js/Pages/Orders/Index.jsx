@@ -123,11 +123,10 @@ export default function Index({ auth }) {
                                                 </td>
                                                 <td className="py-3">
                                                     <span
-                                                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${
-                                                            o.is_paid
-                                                                ? "bg-green-100 text-green-700"
-                                                                : "bg-yellow-100 text-yellow-800"
-                                                        }`}
+                                                        className={`inline-flex rounded-full px-2 py-1 text-xs font-medium ${o.is_paid
+                                                            ? "bg-green-100 text-green-700"
+                                                            : "bg-yellow-100 text-yellow-800"
+                                                            }`}
                                                     >
                                                         {o.is_paid
                                                             ? "PAID"
@@ -135,9 +134,11 @@ export default function Index({ auth }) {
                                                     </span>
                                                 </td>
                                                 <td className="py-3 text-gray-600">
-                                                    {o.created_at_human ||
-                                                        o.created_at ||
-                                                        "-"}
+                                                    {
+                                                        o.created_at
+                                                            ? new Date(o.created_at).toLocaleDateString("en-GB")
+                                                            : "—"
+                                                    }
                                                 </td>
                                                 <td className="py-3 text-right font-medium">
                                                     $

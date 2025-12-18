@@ -14,6 +14,7 @@
         .right { text-align: right; }
         .total { font-size: 14px; font-weight: bold; }
         .badge { display:inline-block; padding: 4px 8px; border-radius: 999px; background: #e7f7ec; color:#0a7a2f; font-weight: 700; font-size: 11px; }
+        .badge-warning { display:inline-block; padding: 4px 8px; border-radius: 999px; background: rgb(254 249 195 / var(--tw-bg-opacity, 1)); color:rgb(133 77 14 / var(--tw-text-opacity, 1)); font-weight: 700; font-size: 11px; }
         .footer { margin-top: 18px; font-size: 11px; color:#666; }
     </style>
 </head>
@@ -31,7 +32,13 @@
                 Date: {{ optional($order->created_at)->format('Y-m-d H:i') ?? '-' }}
             </div>
             <div style="margin-top:6px;">
-                <span class="badge">{{ strtoupper($order->status ?? 'PAID') }}</span>
+                @php
+    $isPaid = strtoupper($order->status ?? 'PAID') === 'PAID';
+@endphp
+
+<span class="{{ $isPaid ? 'badge' : 'badge-warning' }}">
+ {{ strtoupper($order->status ?? 'PAID') }}
+                </span>
             </div>
         </div>
     </div>

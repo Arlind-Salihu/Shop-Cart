@@ -8,25 +8,26 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class InvoiceController extends Controller
 {
+    // USER: only his own + only if PAID
     public function invoice(Order $order)
     {
-        // Security
-        if ($order->user_id !== auth()->id()) {
-            abort(403);
-        }
-
-        if (!$order->is_paid) {
-            abort(403, 'Order not paid');
-        }
+        abort_unless($order->user_id === auth()->id(), 403);
+        abort_unless($order->status === 'paid', 403);
 
         $order->load(['items.product', 'user']);
 
-        $pdf = Pdf::loadView('pdf.invoice', [
-            'order' => $order
-        ]);
+        return Pdf::loadView('pdf.invoice', ['order' => $order])
+            ->download("invoice-{$order->id}.pdf");
+    }
 
-        return $pdf->download(
-            'invoice-order-' . $order->id . '.pdf'
-        );
+    // ADMIN: any order, any status
+    public function adminInvoice(Order $order)
+    {
+        abort_unless(auth()->user()?->is_admin, 403);
+
+        $order->load(['items.product', 'user']);
+
+        return Pdf::loadView('pdf.invoice', ['order' => $order])
+            ->download("invoice-{$order->id}.pdf");
     }
 }
